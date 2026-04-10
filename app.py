@@ -1,4 +1,79 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, jsonify, session, redirect, url_for
+import os
+import sqlite3
+
+app = Flask(__name__)
+app.secret_key = "secret-key"
+
+# =========================
+# DATABASE
+# =========================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "app.db")
+
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    return conn
+
+
+def init_db():
+    conn = get_db()
+    c = conn.cursor()
+
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        email TEXT
+    )
+    """)
+
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        price REAL
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+# Initialize safely (Render-safe)
+init_db()
+
+
+# =========================
+# ROUTES
+# =========================
+@app.route("/")
+def home():
+    return redirect(url_for("stats"))
+
+
+@app.route("/stats")
+def stats():
+    conn = get_db()
+    c = conn.cursor()
+
+    users = c.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    products = c.execute("SELECT COUNT(*) FROM products").fetchone()[0]
+
+    conn.close()
+
+    return jsonify({
+        "users": users,
+        "products": products
+    })
+
+
+# =========================
+# RENDER ENTRY POINT
+# =========================
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 import os
