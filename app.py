@@ -1,4 +1,227 @@
+## ============================================================
+# John Mark Cloth - E-Commerce Flask Application (FIXED)
 # ============================================================
+
+from flask import (
+    Flask, render_template, request, redirect,
+    url_for, session, flash, jsonify
+)
+from werkzeug.security import generate_password_hash, check_password_hash
+import sqlite3
+import os
+from functools import wraps
+from datetime import datetime, timedelta
+import random
+
+# ── App Configuration ────────────────────────────────────────
+app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'johnmark-cloth-secret-2024')
+
+# ✅ FIXED: Absolute DB path for Render
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE = os.path.join(BASE_DIR, "johnmark.db")
+
+
+# ── Database Helpers ─────────────────────────────────────────
+def get_db():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_db():
+    conn = get_db()
+    c = conn.cursor()
+
+    # Users table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'user',
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    ''')
+
+    # Products table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL,
+            age_group TEXT NOT NULL,
+            size TEXT NOT NULL,
+            color TEXT NOT NULL,
+            price REAL NOT NULL,
+            stock INTEGER NOT NULL DEFAULT 0,
+            description TEXT,
+            added_by INTEGER,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    ''')
+
+    # Orders table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            quantity INTEGER NOT NULL DEFAULT 1,
+            total_price REAL NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            ordered_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    ''')
+
+    # Seed admin
+    admin = c.execute("SELECT id FROM users WHERE email='admin@example.com'").fetchone()
+    if not admin:
+        c.execute(
+            "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
+            ('Admin', 'admin@example.com',
+             generate_password_hash('admin123'), 'admin')
+        )
+
+    # Seed products
+    count = c.execute("SELECT COUNT(*) FROM products").fetchone()[0]
+    if count == 0:
+        products = [
+            ('Floral Frock', 'Dress', '3-5 years', 'S', 'Pink', 599, 25, 'Nice frock'),
+            ('Denim Dungaree', 'Dungaree', '6-8 years', 'M', 'Blue', 799, 18, 'Kids wear'),
+            ('Cotton Kurta', 'Ethnic', '2-4 years', 'XS', 'Yellow', 449, 30, 'Soft cotton'),
+        ]
+        c.executemany(
+            '''INSERT INTO products
+            (name, category, age_group, size, color, price, stock, description, added_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)''',
+            products
+        )
+
+    conn.commit()
+    conn.close()
+
+
+# ── Auth Decorators ──────────────────────────────────────────
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return wrapper
+
+
+def admin_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if session.get('role') != 'admin':
+            return redirect(url_for('dashboard'))
+        return f(*args, **kwargs)
+    return wrapper
+
+
+# ── Routes ───────────────────────────────────────────────────
+@app.route('/')
+def index():
+    return redirect(url_for('login'))
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        conn = get_db()
+        user = conn.execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
+        conn.close()
+
+        if user and check_password_hash(user['password'], password):
+            session['user_id'] = user['id']
+            session['name'] = user['name']
+            session['role'] = user['role']
+            return redirect(url_for('dashboard'))
+
+        flash("Invalid credentials")
+
+    return render_template('login.html')
+
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    conn = get_db()
+
+    products = conn.execute("SELECT * FROM products").fetchall()
+    conn.close()
+
+    return render_template('dashboard.html', products=products)
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+
+# ── Product Add ──────────────────────────────────────────────
+@app.route('/product/add', methods=['POST'])
+@login_required
+def add_product():
+    name = request.form['name']
+    category = request.form['category']
+    price = float(request.form['price'])
+    stock = int(request.form['stock'])
+
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO products (name, category, age_group, size, color, price, stock, description, added_by)"
+        " VALUES (?, ?, '', '', '', ?, ?, '', ?)",
+        (name, category, price, stock, session['user_id'])
+    )
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('dashboard'))
+
+
+# ── Admin ───────────────────────────────────────────────────
+@app.route('/admin')
+@login_required
+@admin_required
+def admin_panel():
+    conn = get_db()
+
+    users = conn.execute("SELECT * FROM users").fetchall()
+    products = conn.execute("SELECT * FROM products").fetchall()
+
+    conn.close()
+
+    return render_template('admin.html', users=users, products=products)
+
+
+# ── API ──────────────────────────────────────────────────────
+@app.route('/api/stats')
+@login_required
+def stats():
+    conn = get_db()
+
+    data = {
+        "users": conn.execute("SELECT COUNT(*) FROM users").fetchone()[0],
+        "products": conn.execute("SELECT COUNT(*) FROM products").fetchone()[0],
+        "orders": conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
+    }
+
+    conn.close()
+    return jsonify(data)
+
+
+# ── SAFE ENTRY POINT (IMPORTANT FOR RENDER) ─────────────────
+if __name__ == '__main__':
+    init_db()
+    app.run(host='0.0.0.0', port=5000, debug=True) ============================================================
 # John Mark Cloth - E-Commerce Flask Application
 # ============================================================
 # A children's clothing e-commerce platform with:
