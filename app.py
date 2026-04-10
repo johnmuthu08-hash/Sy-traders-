@@ -5,6 +5,169 @@ import os
 from functools import wraps
 
 # ============================================================
+# CREATE APP (RENDER SAFE)
+# ============================================================
+
+app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "default-secret")
+
+# ============================================================
+# DATABASE PATH (RENDER SAFE)
+# ============================================================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE = os.path.join(BASE_DIR, "app.db")
+
+
+def get_db():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+# ============================================================
+# INIT DB (SAFE - NO IMPORT CRASH)
+# ============================================================
+def init_db():
+    conn = get_db()
+    c = conn.cursor()
+
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        email TEXT UNIQUE,
+        password TEXT,
+        role TEXT DEFAULT 'user'
+    )
+    """)
+
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        category TEXT,
+        price REAL,
+        stock INTEGER
+    )
+    """)
+
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        product_id INTEGER,
+        quantity INTEGER,
+        total_price REAL
+    )
+    """)
+
+    # Seed admin only once
+    admin = c.execute("SELECT * FROM users WHERE email=?", ("admin@example.com",)).fetchone()
+    if not admin:
+        c.execute(
+            "INSERT INTO users (name,email,password,role) VALUES (?,?,?,?)",
+            ("Admin", "admin@example.com",
+             generate_password_hash("admin123"), "admin")
+        )
+
+    conn.commit()
+    conn.close()
+
+
+# ============================================================
+# RUN INIT ONCE (SAFE FOR RENDER)
+# ============================================================
+with app.app_context():
+    init_db()
+
+
+# ============================================================
+# AUTH DECORATOR
+# ============================================================
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return wrapper
+
+
+# ============================================================
+# ROUTES
+# ============================================================
+
+@app.route("/")
+def index():
+    return redirect(url_for("login"))
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+
+        conn = get_db()
+        user = conn.execute(
+            "SELECT * FROM users WHERE email=?",
+            (email,)
+        ).fetchone()
+        conn.close()
+
+        if user and check_password_hash(user["password"], password):
+            session["user_id"] = user["id"]
+            session["name"] = user["name"]
+            session["role"] = user["role"]
+            return redirect(url_for("dashboard"))
+
+        flash("Invalid credentials")
+
+    return render_template("login.html")
+
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    conn = get_db()
+    products = conn.execute("SELECT * FROM products").fetchall()
+    conn.close()
+    return render_template("dashboard.html", products=products)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
+# ============================================================
+# API
+# ============================================================
+@app.route("/api/stats")
+@login_required
+def stats():
+    conn = get_db()
+    data = {
+        "users": conn.execute("SELECT COUNT(*) FROM users").fetchone()[0],
+        "products": conn.execute("SELECT COUNT(*) FROM products").fetchone()[0],
+        "orders": conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
+    }
+    conn.close()
+    return jsonify(data)
+
+
+# ============================================================
+# RENDER ENTRY POINT
+# ============================================================
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from werkzeug.security import generate_password_hash, check_password_hash
+import sqlite3
+import os
+from functools import wraps
+
+# ============================================================
 # APP FACTORY (REQUIRED FOR RENDER + GUNICORN)
 # ============================================================
 
