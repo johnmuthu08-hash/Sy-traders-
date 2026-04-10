@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Login — John Mark Cloth{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-panel">
+
+        <!-- Decorative side -->
+        <div class="auth-deco">
+            <div class="deco-content">
+                <div class="deco-logo">👗</div>
+                <h1 class="deco-title">John Mark<br/>Cloth</h1>
+                <p class="deco-sub">Premium children's clothing for every occasion. Style meets comfort.</p>
+                <div class="deco-tags">
+                    <span>👶 Infant</span>
+                    <span>🧒 Kids</span>
+                    <span>👦 Teens</span>
+                    <span>🎀 Ethnic</span>
+                    <span>🏫 Uniform</span>
+                    <span>🎉 Party</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login form -->
+        <div class="auth-form-side">
+            <div class="auth-form-wrap">
+                <h2 class="auth-heading">Welcome Back</h2>
+                <p class="auth-sub">Sign in to manage your store</p>
+
+                <form method="POST" action="{{ url_for('login') }}" novalidate>
+
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input
+                            type="email"
+                            name="email"
+                            class="form-control"
+                            placeholder="you@example.com"
+                            required
+                            autocomplete="email"
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div class="input-eye-wrap">
+                            <input
+                                type="password"
+                                name="password"
+                                id="passwordField"
+                                class="form-control"
+                                placeholder="••••••••"
+                                required
+                            />
+                            <button type="button" class="eye-toggle"
+                                    onclick="togglePassword('passwordField', this)">👁️</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary full-width">
+                        Sign In →
+                    </button>
+                </form>
+
+                <div class="auth-hint">
+                    <p>Default Admin: <code>admin@example.com</code> / <code>admin123</code></p>
+                </div>
+
+                <p class="auth-switch">
+                    Don't have an account?
+                    <a href="{{ url_for('register') }}">Register here</a>
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePassword(id, btn) {
+    const input = document.getElementById(id);
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+    } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+    }
+}
+</script>
+{% endblock %}

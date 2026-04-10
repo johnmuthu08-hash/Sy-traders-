@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Add Product — John Mark Cloth{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Add New Product</h1>
+        <p class="page-sub">Fill in the details to list a new clothing item</p>
+    </div>
+    <a href="{{ url_for('dashboard') }}" class="btn-secondary">← Back</a>
+</div>
+
+<div class="form-card">
+    <form method="POST" action="{{ url_for('add_product') }}" novalidate>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Product Name *</label>
+                <input type="text" name="name" class="form-control"
+                       placeholder="e.g. Floral Frock" required />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Category *</label>
+                <select name="category" class="form-control" required>
+                    <option value="">-- Select --</option>
+                    <option>Dress</option>
+                    <option>Dungaree</option>
+                    <option>Ethnic</option>
+                    <option>Casual</option>
+                    <option>Bottom</option>
+                    <option>Infant</option>
+                    <option>Uniform</option>
+                    <option>Top</option>
+                    <option>Outerwear</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Age Group</label>
+                <select name="age_group" class="form-control">
+                    <option>0-1 years</option>
+                    <option>2-4 years</option>
+                    <option>3-5 years</option>
+                    <option>5-7 years</option>
+                    <option>6-8 years</option>
+                    <option>8-10 years</option>
+                    <option>9-12 years</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Size</label>
+                <select name="size" class="form-control">
+                    <option>XS</option>
+                    <option>S</option>
+                    <option>M</option>
+                    <option>L</option>
+                    <option>XL</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Color</label>
+                <input type="text" name="color" class="form-control"
+                       placeholder="e.g. Pink, Blue, White" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Price (₹) *</label>
+                <input type="number" name="price" class="form-control"
+                       placeholder="e.g. 599" min="1" step="0.01" required />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Stock Quantity</label>
+                <input type="number" name="stock" class="form-control"
+                       placeholder="e.g. 25" min="0" value="0" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <input type="text" name="description" class="form-control"
+                       placeholder="Short product description" />
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('dashboard') }}" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary">Add Product →</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

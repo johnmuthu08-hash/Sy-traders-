@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel — John Mark Cloth{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">🛡️ Admin Panel</h1>
+        <p class="page-sub">Full system overview and management</p>
+    </div>
+    <a href="{{ url_for('add_product') }}" class="btn-primary">+ Add Product</a>
+</div>
+
+<!-- ── Key Metrics ──────────────────────────────────────────── -->
+<div class="stats-grid">
+    <div class="stat-card accent-blue">
+        <div class="stat-icon">👥</div>
+        <div class="stat-body">
+            <span class="stat-value">{{ total_users }}</span>
+            <span class="stat-label">Registered Users</span>
+        </div>
+    </div>
+    <div class="stat-card accent-green">
+        <div class="stat-icon">📦</div>
+        <div class="stat-body">
+            <span class="stat-value">{{ total_products }}</span>
+            <span class="stat-label">Products Listed</span>
+        </div>
+    </div>
+    <div class="stat-card accent-amber">
+        <div class="stat-icon">🛒</div>
+        <div class="stat-body">
+            <span class="stat-value">{{ total_orders }}</span>
+            <span class="stat-label">Total Orders</span>
+        </div>
+    </div>
+    <div class="stat-card accent-pink">
+        <div class="stat-icon">💰</div>
+        <div class="stat-body">
+            <span class="stat-value">₹{{ "{:,.0f}".format(total_revenue) }}</span>
+            <span class="stat-label">Total Revenue</span>
+        </div>
+    </div>
+</div>
+
+<!-- ── Charts Row 1 ────────────────────────────────────────── -->
+<div class="charts-row">
+    <div class="chart-card">
+        <h3 class="chart-title">Orders by Status</h3>
+        <div class="chart-wrap">
+            <canvas id="statusChart"></canvas>
+        </div>
+    </div>
+    <div class="chart-card">
+        <h3 class="chart-title">Top 5 Products by Revenue</h3>
+        <div class="chart-wrap">
+            <canvas id="topProductsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ── Charts Row 2 ────────────────────────────────────────── -->
+<div class="charts-row">
+    <div class="chart-card">
+        <h3 class="chart-title">Daily Revenue (Last 7 Days)</h3>
+        <div class="chart-wrap">
+            <canvas id="dailyRevenueChart"></canvas>
+        </div>
+    </div>
+    <div class="chart-card">
+        <h3 class="chart-title">Stock by Category</h3>
+        <div class="chart-wrap">
+            <canvas id="stockChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ── Users Table ─────────────────────────────────────────── -->
+<div class="table-card">
+    <div class="table-header">
+        <h3 class="table-title">All Users</h3>
+        <span class="badge badge-blue">{{ total_users }} total</span>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Registered</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <div class="user-chip">
+                            <div class="chip-avatar">{{ u.name[0] | upper }}</div>
+                            {{ u.name }}
+                        </div>
+                    </td>
+                    <td>{{ u.email }}</td>
+                    <td>
+                        {% if u.role == 'admin' %}
+                            <span class="badge badge-amber">ADMIN</span>
+                        {% else %}
+                            <span class="badge badge-blue">USER</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.created_at[:10] }}</td>
+                    <td>
+                        {% if u.email != 'admin@example.com' %}
+                        <form method="POST"
+                              action="{{ url_for('delete_user', user_id=u.id) }}"
+                              onsubmit="return confirm('Delete user {{ u.name }}?')"
+                              style="display:inline">
+                            <button type="submit" class="btn-delete">🗑️ Delete</button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted">Protected</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Recent Orders Table ─────────────────────────────────── -->
+<div class="table-card">
+    <div class="table-header">
+        <h3 class="table-title">Recent Orders (Latest 20)</h3>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Customer</th>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in orders %}
+                <tr>
+                    <td>#{{ o.id }}</td>
+                    <td>{{ o.user_name }}</td>
+                    <td>{{ o.product_name }}</td>
+                    <td>{{ o.quantity }}</td>
+                    <td class="price">₹{{ "{:,.2f}".format(o.total_price) }}</td>
+                    <td>
+                        {% if o.status == 'delivered' %}
+                            <span class="badge badge-green">Delivered</span>
+                        {% elif o.status == 'shipped' %}
+                            <span class="badge badge-blue">Shipped</span>
+                        {% elif o.status == 'pending' %}
+                            <span class="badge badge-amber">Pending</span>
+                        {% else %}
+                            <span class="badge badge-red">Cancelled</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ o.ordered_at[:10] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── All Products Table ──────────────────────────────────── -->
+<div class="table-card">
+    <div class="table-header">
+        <h3 class="table-title">All Products</h3>
+        <input type="text" id="prodSearch" class="search-input"
+               placeholder="🔍 Search…" onkeyup="filterProd()" />
+    </div>
+    <div class="table-wrap">
+        <table class="data-table" id="adminProdTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Age</th>
+                    <th>Size</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><strong>{{ p.name }}</strong></td>
+                    <td><span class="badge badge-blue">{{ p.category }}</span></td>
+                    <td>{{ p.age_group }}</td>
+                    <td>{{ p.size }}</td>
+                    <td class="price">₹{{ "{:,.2f}".format(p.price) }}</td>
+                    <td>
+                        {% if p.stock > 0 %}
+                            <span class="badge badge-green">{{ p.stock }}</span>
+                        {% else %}
+                            <span class="badge badge-red">Out</span>
+                        {% endif %}
+                    </td>
+                    <td class="actions">
+                        <a href="{{ url_for('edit_product', product_id=p.id) }}"
+                           class="btn-edit">✏️</a>
+                        <form method="POST"
+                              action="{{ url_for('delete_product', product_id=p.id) }}"
+                              onsubmit="return confirm('Delete?')"
+                              style="display:inline">
+                            <button type="submit" class="btn-delete">🗑️</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Chart colour palette
+const palette = ['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#ec4899','#8b5cf6','#14b8a6'];
+const gridColor = '#334155';
+const tickColor = '#64748b';
+const legendColor = '#94a3b8';
+
+// ── Orders by Status ─────────────────────────────────────────
+const statusData = {{ status_data | tojson }};
+new Chart(document.getElementById('statusChart'), {
+    type: 'pie',
+    data: {
+        labels: statusData.map(d => d.status.charAt(0).toUpperCase() + d.status.slice(1)),
+        datasets: [{
+            data: statusData.map(d => d.cnt),
+            backgroundColor: palette,
+            borderColor: '#1e293b', borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom',
+            labels: { color: legendColor, font: { family: 'DM Sans' } } } }
+    }
+});
+
+// ── Top Products Bar Chart ────────────────────────────────────
+const topData = {{ top_products | tojson }};
+new Chart(document.getElementById('topProductsChart'), {
+    type: 'bar',
+    data: {
+        labels: topData.map(d => d.name.length > 15 ? d.name.slice(0,14)+'…' : d.name),
+        datasets: [{
+            label: 'Revenue (₹)',
+            data: topData.map(d => d.revenue),
+            backgroundColor: palette,
+            borderRadius: 6
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { ticks: { color: tickColor }, grid: { color: '#1e293b' } },
+            y: { ticks: { color: tickColor }, grid: { color: gridColor } }
+        }
+    }
+});
+
+// ── Daily Revenue Line Chart ──────────────────────────────────
+const dailyData = {{ daily_revenue | tojson }};
+new Chart(document.getElementById('dailyRevenueChart'), {
+    type: 'line',
+    data: {
+        labels: dailyData.map(d => d.day),
+        datasets: [{
+            label: 'Revenue (₹)',
+            data: dailyData.map(d => d.revenue),
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16,185,129,0.15)',
+            tension: 0.4, fill: true,
+            pointBackgroundColor: '#10b981', pointRadius: 5
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: legendColor, font: { family: 'DM Sans' } } } },
+        scales: {
+            x: { ticks: { color: tickColor }, grid: { color: '#1e293b' } },
+            y: { ticks: { color: tickColor }, grid: { color: gridColor } }
+        }
+    }
+});
+
+// ── Stock by Category Horizontal Bar ─────────────────────────
+const stockData = {{ stock_by_cat | tojson }};
+new Chart(document.getElementById('stockChart'), {
+    type: 'bar',
+    data: {
+        labels: stockData.map(d => d.category),
+        datasets: [{
+            label: 'Stock Units',
+            data: stockData.map(d => d.total_stock),
+            backgroundColor: palette.slice(0, stockData.length),
+            borderRadius: 6
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { ticks: { color: tickColor }, grid: { color: gridColor } },
+            y: { ticks: { color: tickColor }, grid: { color: '#1e293b' } }
+        }
+    }
+});
+
+// ── Product Search ─────────────────────────────────────────────
+function filterProd() {
+    const q = document.getElementById('prodSearch').value.toLowerCase();
+    document.querySelectorAll('#adminProdTable tbody tr').forEach(r => {
+        r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

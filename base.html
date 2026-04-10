@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}John Mark Cloth{% endblock %}</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+{% if session.user_id %}
+<!-- ── Sidebar Navigation ─────────────────────────────────── -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <span class="brand-icon">👗</span>
+        <div class="brand-text">
+            <span class="brand-name">John Mark</span>
+            <span class="brand-sub">Cloth</span>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav">
+        {% if session.role == 'admin' %}
+        <a href="{{ url_for('admin_panel') }}"
+           class="nav-link {% if request.endpoint == 'admin_panel' %}active{% endif %}">
+            <span class="nav-icon">🛡️</span> Admin Panel
+        </a>
+        {% endif %}
+
+        <a href="{{ url_for('dashboard') }}"
+           class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+            <span class="nav-icon">📊</span> Dashboard
+        </a>
+
+        <a href="{{ url_for('add_product') }}"
+           class="nav-link {% if request.endpoint == 'add_product' %}active{% endif %}">
+            <span class="nav-icon">➕</span> Add Product
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="user-pill">
+            <div class="user-avatar">{{ session.name[0] | upper }}</div>
+            <div class="user-meta">
+                <span class="user-name">{{ session.name }}</span>
+                <span class="user-role {{ session.role }}">{{ session.role | upper }}</span>
+            </div>
+        </div>
+        <a href="{{ url_for('logout') }}" class="logout-btn">⏻ Logout</a>
+    </div>
+</aside>
+
+<!-- Mobile Header -->
+<header class="mobile-header">
+    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    <span class="mobile-brand">John Mark Cloth</span>
+</header>
+
+<!-- ── Main Content ───────────────────────────────────────── -->
+<main class="main-content">
+{% endif %}
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-container">
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">
+            {{ message }}
+            <button class="flash-close" onclick="this.parentElement.remove()">✕</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+{% block content %}{% endblock %}
+
+{% if session.user_id %}
+</main>
+{% endif %}
+
+<script>
+// Sidebar toggle for mobile
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+}
+
+// Auto-dismiss flash messages after 4 seconds
+document.querySelectorAll('.flash').forEach(el => {
+    setTimeout(() => el.remove(), 4000);
+});
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

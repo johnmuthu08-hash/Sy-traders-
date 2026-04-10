@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — John Mark Cloth{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-sub">Welcome back, {{ session.name }} 👋</p>
+    </div>
+    <a href="{{ url_for('add_product') }}" class="btn-primary">+ Add Product</a>
+</div>
+
+<!-- ── Stats Cards ──────────────────────────────────────────── -->
+<div class="stats-grid">
+    <div class="stat-card accent-blue">
+        <div class="stat-icon">📦</div>
+        <div class="stat-body">
+            <span class="stat-value">{{ total_products }}</span>
+            <span class="stat-label">Total Products</span>
+        </div>
+    </div>
+    <div class="stat-card accent-green">
+        <div class="stat-icon">✅</div>
+        <div class="stat-body">
+            <span class="stat-value">{{ in_stock }}</span>
+            <span class="stat-label">In Stock</span>
+        </div>
+    </div>
+    <div class="stat-card accent-amber">
+        <div class="stat-icon">🛒</div>
+        <div class="stat-body">
+            <span class="stat-value">{{ total_orders }}</span>
+            <span class="stat-label">My Orders</span>
+        </div>
+    </div>
+    <div class="stat-card accent-pink">
+        <div class="stat-icon">💰</div>
+        <div class="stat-body">
+            <span class="stat-value">₹{{ "{:,.0f}".format(total_spent) }}</span>
+            <span class="stat-label">Amount Spent</span>
+        </div>
+    </div>
+</div>
+
+<!-- ── Charts Row ──────────────────────────────────────────── -->
+<div class="charts-row">
+    <div class="chart-card">
+        <h3 class="chart-title">Products by Category</h3>
+        <div class="chart-wrap">
+            <canvas id="categoryChart"></canvas>
+        </div>
+    </div>
+    <div class="chart-card">
+        <h3 class="chart-title">Order Trend (6 Months)</h3>
+        <div class="chart-wrap">
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ── Products Table ──────────────────────────────────────── -->
+<div class="table-card">
+    <div class="table-header">
+        <h3 class="table-title">All Products</h3>
+        <input type="text" id="searchInput" class="search-input"
+               placeholder="🔍 Search products…" onkeyup="filterTable()" />
+    </div>
+
+    {% if products %}
+    <div class="table-wrap">
+        <table class="data-table" id="productTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Age Group</th>
+                    <th>Size</th>
+                    <th>Color</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><strong>{{ p.name }}</strong></td>
+                    <td><span class="badge badge-blue">{{ p.category }}</span></td>
+                    <td>{{ p.age_group }}</td>
+                    <td>{{ p.size }}</td>
+                    <td>
+                        <span class="color-dot"
+                              style="background: {{ p.color | lower | replace(' ', '') }}"></span>
+                        {{ p.color }}
+                    </td>
+                    <td class="price">₹{{ "{:,.2f}".format(p.price) }}</td>
+                    <td>
+                        {% if p.stock > 0 %}
+                            <span class="badge badge-green">{{ p.stock }}</span>
+                        {% else %}
+                            <span class="badge badge-red">Out of Stock</span>
+                        {% endif %}
+                    </td>
+                    <td class="actions">
+                        <a href="{{ url_for('edit_product', product_id=p.id) }}"
+                           class="btn-edit">✏️ Edit</a>
+                        <form method="POST"
+                              action="{{ url_for('delete_product', product_id=p.id) }}"
+                              onsubmit="return confirm('Delete this product?')"
+                              style="display:inline">
+                            <button type="submit" class="btn-delete">🗑️ Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No products yet. <a href="{{ url_for('add_product') }}">Add one now!</a></p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Category Doughnut Chart ──────────────────────────────────
+const catData = {{ category_data | tojson }};
+new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+        labels: catData.map(d => d.category),
+        datasets: [{
+            data: catData.map(d => d.cnt),
+            backgroundColor: ['#6366f1','#f59e0b','#10b981','#ef4444','#3b82f6','#ec4899','#8b5cf6','#14b8a6'],
+            borderWidth: 2,
+            borderColor: '#1e293b'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { color: '#94a3b8', padding: 12, font: { family: 'DM Sans' } }
+            }
+        }
+    }
+});
+
+// ── Monthly Trend Line Chart ─────────────────────────────────
+const trendData = {{ monthly_orders | tojson }};
+new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+        labels: trendData.map(d => d.month),
+        datasets: [{
+            label: 'Orders',
+            data: trendData.map(d => d.cnt),
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99,102,241,0.15)',
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: '#6366f1',
+            pointRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'DM Sans' } } } },
+        scales: {
+            x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
+            y: { ticks: { color: '#64748b' }, grid: { color: '#334155' } }
+        }
+    }
+});
+
+// ── Table Search Filter ──────────────────────────────────────
+function filterTable() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    document.querySelectorAll('#productTable tbody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

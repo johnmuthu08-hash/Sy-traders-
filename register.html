@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Register — John Mark Cloth{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-panel">
+
+        <!-- Decorative side -->
+        <div class="auth-deco">
+            <div class="deco-content">
+                <div class="deco-logo">✨</div>
+                <h1 class="deco-title">Join Us<br/>Today</h1>
+                <p class="deco-sub">Create your account and start managing the cutest children's clothing store.</p>
+                <ul class="deco-features">
+                    <li>✅ Manage products & inventory</li>
+                    <li>✅ Track orders & revenue</li>
+                    <li>✅ Analytics dashboard</li>
+                    <li>✅ Secure & fast</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Register form -->
+        <div class="auth-form-side">
+            <div class="auth-form-wrap">
+                <h2 class="auth-heading">Create Account</h2>
+                <p class="auth-sub">Fill in your details to get started</p>
+
+                <form method="POST" action="{{ url_for('register') }}" novalidate id="regForm">
+
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input
+                            type="text"
+                            name="name"
+                            class="form-control"
+                            placeholder="Your full name"
+                            required
+                            minlength="2"
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input
+                            type="email"
+                            name="email"
+                            class="form-control"
+                            placeholder="you@example.com"
+                            required
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div class="input-eye-wrap">
+                            <input
+                                type="password"
+                                name="password"
+                                id="pass1"
+                                class="form-control"
+                                placeholder="At least 6 characters"
+                                required
+                                minlength="6"
+                            />
+                            <button type="button" class="eye-toggle"
+                                    onclick="togglePassword('pass1', this)">👁️</button>
+                        </div>
+                        <div class="password-strength" id="strengthBar"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password</label>
+                        <div class="input-eye-wrap">
+                            <input
+                                type="password"
+                                name="confirm_password"
+                                id="pass2"
+                                class="form-control"
+                                placeholder="Repeat your password"
+                                required
+                            />
+                            <button type="button" class="eye-toggle"
+                                    onclick="togglePassword('pass2', this)">👁️</button>
+                        </div>
+                        <small id="matchMsg" class="match-msg"></small>
+                    </div>
+
+                    <button type="submit" class="btn-primary full-width">
+                        Create Account →
+                    </button>
+                </form>
+
+                <p class="auth-switch">
+                    Already have an account?
+                    <a href="{{ url_for('login') }}">Login here</a>
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePassword(id, btn) {
+    const input = document.getElementById(id);
+    input.type = input.type === 'password' ? 'text' : 'password';
+    btn.textContent = input.type === 'password' ? '👁️' : '🙈';
+}
+
+// Password strength indicator
+document.getElementById('pass1').addEventListener('input', function () {
+    const val = this.value;
+    const bar = document.getElementById('strengthBar');
+    let strength = 0;
+    if (val.length >= 6) strength++;
+    if (/[A-Z]/.test(val)) strength++;
+    if (/[0-9]/.test(val)) strength++;
+    if (/[^A-Za-z0-9]/.test(val)) strength++;
+    const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+    const colors = ['', '#ef4444', '#f97316', '#22c55e', '#16a34a'];
+    bar.style.width = (strength * 25) + '%';
+    bar.style.background = colors[strength];
+    bar.title = labels[strength];
+});
+
+// Confirm password match
+document.getElementById('pass2').addEventListener('input', function () {
+    const msg = document.getElementById('matchMsg');
+    if (this.value === document.getElementById('pass1').value) {
+        msg.textContent = '✅ Passwords match';
+        msg.style.color = '#22c55e';
+    } else {
+        msg.textContent = '❌ Passwords do not match';
+        msg.style.color = '#ef4444';
+    }
+});
+</script>
+{% endblock %}
