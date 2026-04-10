@@ -1,5 +1,149 @@
 ## ============================================================
-# John Mark Cloth - E-Commerce Flask Application (FIXED)
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from werkzeug.security import generate_password_hash, check_password_hash
+import sqlite3
+import os
+from functools import wraps
+from datetime import datetime
+
+# ─────────────────────────────────────────────
+# App Factory (IMPORTANT FOR RENDER)
+# ─────────────────────────────────────────────
+
+def create_app():
+    app = Flask(__name__)
+
+    app.secret_key = os.environ.get("SECRET_KEY", "johnmark-secret")
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    DATABASE = os.path.join(BASE_DIR, "johnmark.db")
+
+    # ── DB CONNECTION ──
+    def get_db():
+        conn = sqlite3.connect(DATABASE)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    # ── INIT DB (SAFE) ──
+    def init_db():
+        conn = get_db()
+        c = conn.cursor()
+
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            email TEXT UNIQUE,
+            password TEXT,
+            role TEXT DEFAULT 'user'
+        )
+        """)
+
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            category TEXT,
+            price REAL,
+            stock INTEGER
+        )
+        """)
+
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            product_id INTEGER,
+            quantity INTEGER,
+            total_price REAL
+        )
+        """)
+
+        # seed admin
+        admin = c.execute("SELECT * FROM users WHERE email='admin@example.com'").fetchone()
+        if not admin:
+            c.execute(
+                "INSERT INTO users (name,email,password,role) VALUES (?,?,?,?)",
+                ("Admin", "admin@example.com",
+                 generate_password_hash("admin123"), "admin")
+            )
+
+        conn.commit()
+        conn.close()
+
+    # ── INIT DB ONCE ──
+    with app.app_context():
+        init_db()
+
+    # ── DECORATORS ──
+    def login_required(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if "user_id" not in session:
+                return redirect(url_for("login"))
+            return f(*args, **kwargs)
+        return wrapper
+
+    # ── ROUTES ──
+    @app.route("/")
+    def index():
+        return redirect(url_for("login"))
+
+    @app.route("/login", methods=["GET", "POST"])
+    def login():
+        if request.method == "POST":
+            email = request.form["email"]
+            password = request.form["password"]
+
+            conn = get_db()
+            user = conn.execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
+            conn.close()
+
+            if user and check_password_hash(user["password"], password):
+                session["user_id"] = user["id"]
+                session["name"] = user["name"]
+                session["role"] = user["role"]
+                return redirect(url_for("dashboard"))
+
+            flash("Invalid login")
+
+        return render_template("login.html")
+
+    @app.route("/dashboard")
+    @login_required
+    def dashboard():
+        conn = get_db()
+        products = conn.execute("SELECT * FROM products").fetchall()
+        conn.close()
+        return render_template("dashboard.html", products=products)
+
+    @app.route("/logout")
+    def logout():
+        session.clear()
+        return redirect(url_for("login"))
+
+    @app.route("/api/stats")
+    @login_required
+    def stats():
+        conn = get_db()
+        data = {
+            "users": conn.execute("SELECT COUNT(*) FROM users").fetchone()[0],
+            "products": conn.execute("SELECT COUNT(*) FROM products").fetchone()[0],
+            "orders": conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0],
+        }
+        conn.close()
+        return jsonify(data)
+
+    return app
+
+
+# ─────────────────────────────────────────────
+# RENDER ENTRY POINT
+# ─────────────────────────────────────────────
+app = create_app()
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True) John Mark Cloth - E-Commerce Flask Application (FIXED)
 # ============================================================
 
 from flask import (
