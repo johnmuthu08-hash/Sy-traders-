@@ -1,40 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}John Mark Cloth{% endblock %}</title>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
-    <!-- Main Stylesheet -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-
-    {% block head %}{% endblock %}
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}John Mark Cloth{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { background: #f4f6fb; font-family: 'Segoe UI', sans-serif; }
+    .navbar { background: linear - gradient (135 deg, #6a11cb, #2575fc); }
+    .navbar-brand { font-weight: 700; font-size: 1.4 rem; color: #fff ! important; }
+    .nav-link { color: rgba (255,255,255,.85) ! important; }
+    .nav-link:hover { color: #fff ! important; }
+    .stat-card { border-radius: 16 px; border: none; box-shadow: 0 4 px 18 px rgba (0,0,0,.08); transition: transform .2 s; }
+    .stat-card:hover { transform: translateY (-4 px); }
+    .stat-icon { font-size: 2.5 rem; opacity: .85; }
+    .sidebar { min-height: 100 vh; background: #fff; box-shadow: 2 px 0 12 px rgba (0,0,0,.06); }
+    .table th { background: #f0f3ff; }
+    .badge-role-admin { background: #6a11cb; }
+    .badge-role-user  { background: #2575fc; }
+    .flash-container { position: fixed; top: 70 px; right: 20 px; z-index: 9999; min-width: 300 px; }
+    .card { border-radius: 14 px; border: none; box-shadow: 0 2 px 12 px rgba (0,0,0,.07); }
+    .btn-primary { background: linear - gradient (135 deg,#6a11cb,#2575fc); border: none; }
+    .btn-primary:hover { opacity: .9; }
+  </style>
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
 
 {% if session.user_id %}
-<!-- ── Sidebar Navigation ─────────────────────────────────── -->
-<aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-        <span class="brand-icon">👗</span>
-        <div class="brand-text">
-            <span class="brand-name">John Mark</span>
-            <span class="brand-sub">Cloth</span>
-        </div>
-    </div>
+<nav class="navbar navbar-expand-lg px-4 py-2">
+  <a class="navbar-brand" href="/"><i class="bi bi-bag-heart-fill me-2"></i>John Mark Cloth</a>
+  <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navMenu">
+    <ul class="navbar-nav ms-auto align-items-center gap-2">
+      {% if session.role == 'admin' %}
+      <li class="nav-item"><a class="nav-link" href="/admin"><i class="bi bi-speedometer2 me-1"></i>Admin Panel</a></li>
+      {% endif %}
+      <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="bi bi-grid me-1"></i>Dashboard</a></li>
+      <li class="nav-item"><a class="nav-link" href="/product/add"><i class="bi bi-plus-circle me-1"></i>Add Product</a></li>
+      <li class="nav-item">
+        <span class="nav-link text-white-50"><i class="bi bi-person-circle me-1"></i>{{ session.name }}</span>
+      </li>
+      <li class="nav-item">
+        <a class="btn btn-sm btn-outline-light" href="/logout"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+{% endif %}
 
-    <nav class="sidebar-nav">
-        {% if session.role == 'admin' %}
-        <a href="{{ url_for('admin_panel') }}"
-           class="nav-link {% if request.endpoint == 'admin_panel' %}active{% endif %}">
-            <span class="nav-icon">🛡️</span> Admin Panel
+<div class="flash-container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show shadow" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endwith %}
+</div>
+
+{% block content %}{% endblock %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>            <span class="nav-icon">🛡️</span> Admin Panel
         </a>
         {% endif %}
 
@@ -78,7 +113,7 @@
       {% for category, message in messages %}
         <div class="flash flash-{{ category }}">
             {{ message }}
-            <button class="flash-close" onclick="this.parentElement.remove()">✕</button>
+            <button class="flash-close" onclick=".parentElement.remove()">✕</button>
         </div>
       {% endfor %}
     </div>
@@ -93,7 +128,7 @@
 
 <script>
 // Sidebar toggle for mobile
-function toggleSidebar() {
+ toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('open');
 }
 
