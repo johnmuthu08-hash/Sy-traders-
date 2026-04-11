@@ -1,96 +1,74 @@
-{% extends "base.html" %}
-{% block title %}Add Product — John Mark Cloth{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Add Product – John Mark Cloth{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div>
-        <h1 class="page-title">Add New Product</h1>
-        <p class="page-sub">Fill in the details to list a new clothing item</p>
+<div class="container py-5" style="max-width:640 px;">
+  <div class="card p-4 shadow-sm">
+    <div class="d-flex align-items-center mb-4">
+      <a href="/dashboard" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+      <h5 class="fw-bold mb-0"><i class="bi bi-plus-circle me-2" style="color:#6a11cb;"></i>Add New Product</h5>
     </div>
-    <a href="{{ url_for('dashboard') }}" class="btn-secondary">← Back</a>
-</div>
 
-<div class="form-card">
-    <form method="POST" action="{{ url_for('add_product') }}" novalidate>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Product Name *</label>
-                <input type="text" name="name" class="form-control"
-                       placeholder="e.g. Floral Frock" required />
-            </div>
-            <div class="form-group">
-                <label class="form-label">Category *</label>
-                <select name="category" class="form-control" required>
-                    <option value="">-- Select --</option>
-                    <option>Dress</option>
-                    <option>Dungaree</option>
-                    <option>Ethnic</option>
-                    <option>Casual</option>
-                    <option>Bottom</option>
-                    <option>Infant</option>
-                    <option>Uniform</option>
-                    <option>Top</option>
-                    <option>Outerwear</option>
-                </select>
-            </div>
+    <form method="POST" action="/product/add">
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label fw-semibold">Product Name *</label>
+          <input type="text" name="name" class="form-control" placeholder="e.g. Floral Frock" required/>
         </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Age Group</label>
-                <select name="age_group" class="form-control">
-                    <option>0-1 years</option>
-                    <option>2-4 years</option>
-                    <option>3-5 years</option>
-                    <option>5-7 years</option>
-                    <option>6-8 years</option>
-                    <option>8-10 years</option>
-                    <option>9-12 years</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Size</label>
-                <select name="size" class="form-control">
-                    <option>XS</option>
-                    <option>S</option>
-                    <option>M</option>
-                    <option>L</option>
-                    <option>XL</option>
-                </select>
-            </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Category *</label>
+          <select name="category" class="form-select" required>
+            <option value="">Select category</option>
+            {% for cat in ['Dress','Dungaree','Ethnic','Casual','Bottom','Infant','Uniform','Other'] %}
+            <option value="{{ cat }}">{{ cat }}</option>
+            {% endfor %}
+          </select>
         </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Color</label>
-                <input type="text" name="color" class="form-control"
-                       placeholder="e.g. Pink, Blue, White" />
-            </div>
-            <div class="form-group">
-                <label class="form-label">Price (₹) *</label>
-                <input type="number" name="price" class="form-control"
-                       placeholder="e.g. 599" min="1" step="0.01" required />
-            </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Age Group</label>
+          <select name="age_group" class="form-select">
+            <option value="">Select age group</option>
+            {% for ag in ['0-1 years','2-4 years','3-5 years','5-7 years','6-8 years','8-10 years','9-12 years','6-10 years'] %}
+            <option value="{{ ag }}">{{ ag }}</option>
+            {% endfor %}
+          </select>
         </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Stock Quantity</label>
-                <input type="number" name="stock" class="form-control"
-                       placeholder="e.g. 25" min="0" value="0" />
-            </div>
-            <div class="form-group">
-                <label class="form-label">Description</label>
-                <input type="text" name="description" class="form-control"
-                       placeholder="Short product description" />
-            </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Size</label>
+          <select name="size" class="form-select">
+            <option value="">Select size</option>
+            {% for s in ['XS','S','M','L','XL','XXL'] %}
+            <option value="{{ s }}">{{ s }}</option>
+            {% endfor %}
+          </select>
         </div>
-
-        <div class="form-actions">
-            <a href="{{ url_for('dashboard') }}" class="btn-secondary">Cancel</a>
-            <button type="submit" class="btn-primary">Add Product →</button>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Color</label>
+          <input type="text" name="color" class="form-control" placeholder="e.g. Pink, Blue"/>
         </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Price (₹) *</label>
+          <div class="input-group">
+            <span class="input-group-text">₹</span>
+            <input type="number" name="price" class="form-control" placeholder="0.00" step="0.01" min="0" required/>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Stock Quantity</label>
+          <input type="number" name="stock" class="form-control" placeholder="0" min="0" value="0"/>
+        </div>
+        <div class="col-12">
+          <label class="form-label fw-semibold">Description</label>
+          <textarea name="description" class="form-control" rows="3" placeholder="Brief product description..."></textarea>
+        </div>
+        <div class="col-12 d-flex gap-2 mt-2">
+          <button type="submit" class="btn btn-primary px-4">
+            <i class="bi bi-plus-circle me-1"></i> Add Product
+          </button>
+          <a href="/dashboard" class="btn btn-outline-secondary px-4">Cancel</a>
+        </div>
+      </div>
     </form>
+  </div>
 </div>
 {% endblock %}
