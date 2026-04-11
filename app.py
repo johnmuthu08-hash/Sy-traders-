@@ -8,16 +8,16 @@
 # - SQLite database with auto-initialization
 # ============================================================
 
-from flask import (
+fromflaskimport (
     Flask, render_template, request, redirect,
     url_for, session, flash, jsonify
 )
-from werkzeug.security import generate_password_hash, check_password_hash
-import sqlite3
-import os
-from functools import wraps
-from datetime import datetime, timedelta
-import random
+fromwerkzeug.security importgenerate_password_hash, check_password_hash
+importlsqlite3
+importos
+fromfunctools importwraps
+fromdatetime importdatetime, timedelta
+importrandom
 
 # ── App Configuration ────────────────────────────────────────
 app = Flask(__name__)
@@ -27,14 +27,14 @@ DATABASE = 'johnmark.db'
 
 # ── Database Helpers ─────────────────────────────────────────
 
-def get_db():
+defget_db():
     """Open a new database connection."""
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row  # Access columns by name
-    return conn
+    returnconn
 
 
-def init_db():
+definit_db():
     """Create tables and seed default data if they don't exist."""
     conn = get_db()
     c = conn.cursor()
@@ -89,7 +89,7 @@ def init_db():
         "SELECT id FROM users WHERE email = 'admin@example.com'"
     ).fetchone()
 
-    if not existing_admin:
+    ifnotexisting_admin:
         c.execute(
             "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
             ('Admin', 'admin@example.com',
@@ -99,7 +99,7 @@ def init_db():
     # ── Seed: Sample Products ────────────────────────────────
     product_count = c.execute("SELECT COUNT(*) FROM products").fetchone()[0]
 
-    if product_count == 0:
+    ifproduct_count == 0:
         sample_products = [
             ('Floral Frock', 'Dress', '3-5 years', 'S', 'Pink', 599.00, 25,
              'Beautiful floral frock for little girls'),
@@ -128,9 +128,9 @@ def init_db():
     # ── Seed: Sample Orders ──────────────────────────────────
     order_count = c.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
 
-    if order_count == 0:
+    iforder_count == 0:
         statuses = ['delivered', 'shipped', 'pending', 'cancelled']
-        for i in range(30):
+        foriin range(30):
             days_ago = random.randint(0, 29)
             date_str = (datetime.now() - timedelta(days=days_ago)).strftime('%Y-%m-%d %H:%M:%S')
             prod_id  = random.randint(1, 8)
@@ -149,26 +149,26 @@ def init_db():
 
 # ── Auth Decorators ──────────────────────────────────────────
 
-def login_required(f):
+deflogin_required(f):
     """Redirect to login if user is not authenticated."""
     @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'user_id' not in session:
+    defdecorated(args,kwargs):
+        'user_id' notin session:
             flash('Please login to continue.', 'warning')
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated
+            returnredirect(url_for('login'))
+        returnf(args,kwargs)
+    returndecorated
 
 
-def admin_required(f):
+defadmin_required(f):
     """Restrict route to admin users only."""
     @wraps(f)
-    def decorated(*args, **kwargs):
-        if session.get('role') != 'admin':
+    defdecorated(args,kwargs):
+        ifsession.get('role') != 'admin':
             flash('Admin access required.', 'danger')
-            return redirect(url_for('dashboard'))
-        return f(*args, **kwargs)
-    return decorated
+            returnredirect(url_for('dashboard'))
+        returnf(args,kwargs)
+    returndecorated
 
 
 # ── DB Init on First Request ─────────────────────────────────
@@ -176,35 +176,35 @@ def admin_required(f):
 # and WSGI servers like gunicorn — no module-level app context needed.
 
 @app.before_request
-def initialize_db_once():
+definitialize_db_once():
     """Initialize DB on the very first request, then deregister itself."""
-    app.before_request_funcs[None].remove(initialize_db_once)
+    app.before_request_funcs.remove(initialize_db_once)
     init_db()
 
 
 # ── Auth Routes ──────────────────────────────────────────────
 
 @app.route('/')
-def index():
+defindex():
     """Redirect root to dashboard or login."""
-    if 'user_id' in session:
-        return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+     'user_id' insession:
+        returnredirect(url_for('dashboard'))
+    returnredirect(url_for('login'))
 
 
 @app.route('/login', methods=['GET', 'POST'])
-def login():
+deflogin():
     """Handle user login."""
-    if 'user_id' in session:
-        return redirect(url_for('dashboard'))
+    'user_id' insession:
+        returnredirect(url_for('dashboard'))
 
-    if request.method == 'POST':
+    ifrequest.method == 'POST':
         email    = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
 
-        if not email or not password:
+        ifnot email ornot password:
             flash('Please fill in all fields.', 'danger')
-            return render_template('login.html')
+            returnrender_template('login.html')
 
         conn = get_db()
         user = conn.execute(
@@ -212,56 +212,56 @@ def login():
         ).fetchone()
         conn.close()
 
-        if user and check_password_hash(user['password'], password):
+        ifuser andcheck_password_hash(user['password'], password):
             session['user_id'] = user['id']
             session['name']    = user['name']
             session['email']   = user['email']
             session['role']    = user['role']
             flash(f"Welcome back, {user['name']}!", 'success')
-            return redirect(url_for('admin_panel') if user['role'] == 'admin'
-                            else url_for('dashboard'))
+            returnredirect(url_for('admin_panel') ifuser['role'] == 'admin'
+                            elseurl_for('dashboard'))
 
         flash('Invalid email or password.', 'danger')
 
-    return render_template('login.html')
+    returnrender_template('login.html')
 
 
 @app.route('/register', methods=['GET', 'POST'])
-def register():
+defregister():
     """Handle new user registration."""
-    if 'user_id' in session:
-        return redirect(url_for('dashboard'))
+    'user_id'. in session:
+        returnredirect(url_for('dashboard'))
 
-    if request.method == 'POST':
+    ifrequest.method == 'POST':
         name     = request.form.get('name', '').strip()
         email    = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
         confirm  = request.form.get('confirm_password', '')
 
         errors = []
-        if not name or len(name) < 2:
+        ifnotname orlen(name) < 2:
             errors.append('Name must be at least 2 characters.')
-        if not email or '@' not in email:
+        ifnot emailor '@' notin email:
             errors.append('Enter a valid email address.')
-        if len(password) < 6:
+        iflen(password) < 6:
             errors.append('Password must be at least 6 characters.')
-        if password != confirm:
+        ifpassword != confirm:
             errors.append('Passwords do not match.')
 
-        if errors:
-            for err in errors:
+        iferrors:
+            forerr inerrors:
                 flash(err, 'danger')
-            return render_template('register.html')
+            returnrender_template('register.html')
 
         conn = get_db()
         existing = conn.execute(
             "SELECT id FROM users WHERE email = ?", (email,)
         ).fetchone()
 
-        if existing:
+        ifexisting:
             flash('Email already registered. Please login.', 'warning')
             conn.close()
-            return render_template('register.html')
+            returnrender_template('register.html')
 
         conn.execute(
             "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'user')",
@@ -271,24 +271,24 @@ def register():
         conn.close()
 
         flash('Registration successful! Please login.', 'success')
-        return redirect(url_for('login'))
+        returnredirect(url_for('login'))
 
-    return render_template('register.html')
+    returnrender_template('register.html')
 
 
 @app.route('/logout')
-def logout():
+deflogout():
     """Clear session and redirect to login."""
     session.clear()
     flash('You have been logged out.', 'info')
-    return redirect(url_for('login'))
+    returnredirect(url_for('login'))
 
 
 # ── Dashboard (User) ─────────────────────────────────────────
 
 @app.route('/dashboard')
 @login_required
-def dashboard():
+defdashboard():
     """User dashboard with product listing and stats."""
     conn = get_db()
 
@@ -323,15 +323,15 @@ def dashboard():
 
     conn.close()
 
-    return render_template(
+    returnrender_template(
         'dashboard.html',
         products=products,
         total_products=total_products,
         total_orders=total_orders,
         total_spent=round(total_spent, 2),
         in_stock=in_stock,
-        category_data=[dict(r) for r in category_data],
-        monthly_orders=[dict(r) for r in monthly_orders],
+        category_data=[dict(r) forrin category_data],
+        monthly_orders=[dict(r) forrin monthly_orders],
     )
 
 
@@ -353,16 +353,16 @@ def add_product():
             'description': request.form.get('description', '').strip(),
         }
 
-        if not all([fields['name'], fields['category'], fields['price']]):
+        ifnotall([fields['name'], fields['category'], fields['price']]):
             flash('Name, category, and price are required.', 'danger')
-            return render_template('add_product.html')
+            returnrender_template('add_product.html')
 
-        try:
+        Try:
             price = float(fields['price'])
             stock = int(fields['stock'])
-        except ValueError:
+        exceptValueError:
             flash('Price and stock must be valid numbers.', 'danger')
-            return render_template('add_product.html')
+            returnrender_template('add_product.html')
 
         conn = get_db()
         conn.execute(
@@ -377,40 +377,40 @@ def add_product():
         conn.close()
 
         flash('Product added successfully!', 'success')
-        return redirect(url_for('dashboard'))
+        returnredirect(url_for('dashboard'))
 
-    return render_template('add_product.html')
+    returnrender_template('add_product.html')
 
 
 @app.route('/product/edit/<int:product_id>', methods=['GET', 'POST'])
 @login_required
-def edit_product(product_id):
+defedit_product(product_id):
     """Edit an existing product."""
     conn = get_db()
     product = conn.execute(
         "SELECT * FROM products WHERE id = ?", (product_id,)
     ).fetchone()
 
-    if not product:
+    ifnotproduct:
         flash('Product not found.', 'danger')
         conn.close()
-        return redirect(url_for('dashboard'))
+        returnredirect(url_for('dashboard'))
 
-    if request.method == 'POST':
+    ifrequest.method == 'POST':
         name        = request.form.get('name', '').strip()
         category    = request.form.get('category', '').strip()
         age_group   = request.form.get('age_group', '').strip()
         size        = request.form.get('size', '').strip()
         color       = request.form.get('color', '').strip()
         description = request.form.get('description', '').strip()
-
-        try:
+       
+        Try:
             price = float(request.form.get('price', 0))
             stock = int(request.form.get('stock', 0))
-        except ValueError:
+        exceptValueError:
             flash('Price and stock must be valid numbers.', 'danger')
             conn.close()
-            return render_template('edit_product.html', product=product)
+            returnrender_template('edit_product.html', product=product)
 
         conn.execute(
             '''UPDATE products
@@ -424,22 +424,22 @@ def edit_product(product_id):
         conn.close()
 
         flash('Product updated successfully!', 'success')
-        return redirect(url_for('dashboard'))
+        returnredirect(url_for('dashboard'))
 
     conn.close()
-    return render_template('edit_product.html', product=product)
+    returnrender_template('edit_product.html', product=product)
 
 
 @app.route('/product/delete/<int:product_id>', methods=['POST'])
 @login_required
-def delete_product(product_id):
+defdelete_product(product_id):
     """Delete a product."""
     conn = get_db()
     conn.execute("DELETE FROM products WHERE id = ?", (product_id,))
     conn.commit()
     conn.close()
     flash('Product deleted.', 'success')
-    return redirect(url_for('dashboard'))
+    returnredirect(url_for('dashboard'))
 
 
 # ── Admin Panel ──────────────────────────────────────────────
@@ -447,7 +447,7 @@ def delete_product(product_id):
 @app.route('/admin')
 @login_required
 @admin_required
-def admin_panel():
+defadmin_panel():
     """Admin dashboard with full system analytics."""
     conn = get_db()
 
@@ -502,7 +502,7 @@ def admin_panel():
 
     conn.close()
 
-    return render_template(
+    returnrender_template(
         'admin.html',
         total_users=total_users,
         total_products=total_products,
@@ -511,34 +511,34 @@ def admin_panel():
         users=users,
         products=products,
         orders=orders,
-        status_data=[dict(r) for r in status_data],
-        top_products=[dict(r) for r in top_products],
-        daily_revenue=[dict(r) for r in daily_revenue],
-        stock_by_cat=[dict(r) for r in stock_by_cat],
+        status_data=[dict(r) forrin status_data],
+        top_products=[dict(r) forrin top_products],
+        daily_revenue=[dict(r) forrin daily_revenue],
+        stock_by_cat=[dict(r) forrin stock_by_cat],
     )
 
 
 @app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
 @login_required
 @admin_required
-def delete_user(user_id):
+defdelete_user(user_id):
     """Admin: delete a user account."""
-    if user_id == session['user_id']:
+    ifuser_id == session['user_id']:
         flash("You cannot delete your own account.", 'danger')
-        return redirect(url_for('admin_panel'))
+        returnredirect(url_for('admin_panel'))
     conn = get_db()
     conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
     conn.commit()
     conn.close()
     flash('User deleted.', 'success')
-    return redirect(url_for('admin_panel'))
+    returnredirect(url_for('admin_panel'))
 
 
 # ── API Endpoints (for AJAX) ─────────────────────────────────
 
 @app.route('/api/stats')
 @login_required
-def api_stats():
+defapi_stats():
     """Return live stats as JSON for dashboard refresh."""
     conn = get_db()
     data = {
@@ -556,11 +556,11 @@ def api_stats():
         ).fetchone()[0],
     }
     conn.close()
-    return jsonify(data)
+    returnjsonify(data)
 
 
 # ── App Entry Point ──────────────────────────────────────────
 
-if __name__ == '__main__':
+if__name__ == '__main__':
     init_db()
     app.run(debug=True)
