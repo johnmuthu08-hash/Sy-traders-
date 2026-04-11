@@ -233,14 +233,14 @@
 {% block scripts %}
 <script>
 // Chart colour palette
-const palette = ['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#ec4899','#8b5cf6','#14b8a6'];
-const gridColor = '#334155';
-const tickColor = '#64748b';
-const legendColor = '#94a3b8';
+constpalette = ['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#ec4899','#8b5cf6','#14b8a6'];
+constgridColor = '#334155';
+consttickColor = '#64748b';
+constlegendColor = '#94a3b8';
 
 // ── Orders by Status ─────────────────────────────────────────
-const statusData = {{ status_data | tojson }};
-new Chart(document.getElementById('statusChart'), {
+conststatusData = {{ status_data | tojson }};
+newChart(document.getElementById('statusChart'), {
     type: 'pie',
     data: {
         labels: statusData.map(d => d.status.charAt(0).toUpperCase() + d.status.slice(1)),
@@ -259,8 +259,8 @@ new Chart(document.getElementById('statusChart'), {
 });
 
 // ── Top Products Bar Chart ────────────────────────────────────
-const topData = {{ top_products | tojson }};
-new Chart(document.getElementById('topProductsChart'), {
+consttopData = {{ top_products | tojson }};
+newChart(document.getElementById('topProductsChart'), {
     type: 'bar',
     data: {
         labels: topData.map(d => d.name.length > 15 ? d.name.slice(0,14)+'…' : d.name),
@@ -282,8 +282,8 @@ new Chart(document.getElementById('topProductsChart'), {
 });
 
 // ── Daily Revenue Line Chart ──────────────────────────────────
-const dailyData = {{ daily_revenue | tojson }};
-new Chart(document.getElementById('dailyRevenueChart'), {
+constdailyData = {{ daily_revenue | tojson }};
+newChart(document.getElementById('dailyRevenueChart'), {
     type: 'line',
     data: {
         labels: dailyData.map(d => d.day),
@@ -331,8 +331,8 @@ new Chart(document.getElementById('stockChart'), {
 });
 
 // ── Product Search ─────────────────────────────────────────────
-function filterProd() {
-    const q = document.getElementById('prodSearch').value.toLowerCase();
+ filterProd() {
+     q = document.getElementById('prodSearch').value.toLowerCase();
     document.querySelectorAll('#adminProdTable tbody tr').forEach(r => {
         r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
     });
