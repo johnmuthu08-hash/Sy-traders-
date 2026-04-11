@@ -339,9 +339,9 @@ defdashboard():
 
 @app.route('/product/add', methods=['GET', 'POST'])
 @login_required
-def add_product():
+defadd_product():
     """Add a new product (any logged-in user)."""
-    if request.method == 'POST':
+    ifrequest.method == 'POST':
         fields = {
             'name':        request.form.get('name', '').strip(),
             'category':    request.form.get('category', '').strip(),
