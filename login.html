@@ -1,11 +1,48 @@
-    const input = document.getElementById(id);
-    if (input.type === 'password') {
-        input.type = 'text';
-        btn.textContent = '🙈';
-    } else {
-        input.type = 'password';
-        btn.textContent = '👁️';
-    }
-}
-</script>
+{% extends 'base.html' %}
+{% block title %}Login – John Mark Cloth{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center" style="background:linear-gradient(135deg,#6a11cb,#2575fc);">
+  <div class="card p-4 shadow-lg" style="width:100%;max-width:420px;">
+    <div class="text-center mb-4">
+      <div style="font-size:3rem;">👗</div>
+      <h3 class="fw-bold text-purple" style="color:#6a11cb;">John Mark Cloth</h3>
+      <p class="text-muted small">Children's Fashion Store</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} py-2">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="/login">
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Email Address</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+          <input type="email" name="email" class="form-control" placeholder="admin@example.com" required/>
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Password</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-lock"></i></span>
+          <input type="password" name="password" class="form-control" placeholder="••••••••" required/>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+        <i class="bi bi-box-arrow-in-right me-1"></i> Login
+      </button>
+    </form>
+
+    <hr class="my-3"/>
+    <p class="text-center mb-0 small">Don't have an account?
+      <a href="/register" class="fw-semibold text-decoration-none" style="color:#6a11cb;">Register here</a>
+    </p>
+    <p class="text-center mt-2 text-muted" style="font-size:.75rem;">
+      Default admin: <code>admin@example.com</code> / <code>admin123</code>
+    </p>
+  </div>
+</div>
 {% endblock %}
